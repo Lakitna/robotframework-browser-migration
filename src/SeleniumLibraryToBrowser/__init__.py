@@ -577,37 +577,33 @@ class SLtoB:
 
     @property
     def b(self) -> Browser:
-        if self._browser is None:
-            self._browser = None
-            self._browser_name = None
-            self._sl2b_name = None
+        current_suite = BuiltIn().get_variable_value("${SUITE_SOURCE}")
+        if not hasattr(self, '_suite') or self._suite != current_suite:
+            self._browser_lib = None
+            browser_lib_name = None
+            sl2b_name = None
             for name, lib in BuiltIn().get_library_instance(all=True).items():
                 if isinstance(lib, Browser):
-                    self._browser = lib
-                    self._browser_name = name
+                    browser_lib_name = name
+                    self._browser_lib = lib
                 elif isinstance(lib, SeleniumLibraryToBrowser):
-                    self._sl2b_name = name
-            if self._browser is None:
-                self._browser_args["timeout"] = self._implicit_wait
-                self._browser = Browser(**self._browser_args)
-                self._browser.set_strict_mode(False, Scope.Global)
-                self._browser._auto_closing_level = AutoClosingLevel.MANUAL
-                self.b.set_browser_timeout(self.implicit_wait, scope=Scope.Global)
-            if self.prioritize_library == PriorityLibrary.Browser:
-                BuiltIn().set_library_search_order(self._browser_name or "Browser")
-            elif self.prioritize_library == PriorityLibrary.SeleniumLibraryToBrowser:
-                BuiltIn().set_library_search_order(self._sl2b_name or "SeleniumLibraryToBrowser")
-        elif (
-            self._sl2b_name is not None
-            and self.prioritize_library == PriorityLibrary.SeleniumLibraryToBrowser
-        ):
-            for name, lib in BuiltIn().get_library_instance(all=True).items():
-                if isinstance(lib, SeleniumLibraryToBrowser):
-                    self._sl2b_name = name
-                    BuiltIn().set_library_search_order(self._sl2b_name)
-        return self._browser
+                    sl2b_name = name
 
-    @property
+            if self._browser_lib is None:
+                self._browser_args["timeout"] = self._implicit_wait
+                self._browser_lib = Browser(**self._browser_args)
+                self._browser_lib.set_strict_mode(False, Scope.Global)
+                self._browser_lib._auto_closing_level = AutoClosingLevel.MANUAL
+                self.b.set_browser_timeout(self.implicit_wait, scope=Scope.Global)
+
+            if self.prioritize_library == PriorityLibrary.Browser:
+                BuiltIn().set_library_search_order(browser_lib_name or "Browser")
+            elif self.prioritize_library == PriorityLibrary.SeleniumLibraryToBrowser:
+                BuiltIn().set_library_search_order(sl2b_name or "SeleniumLibraryToBrowser")
+
+            self._suite = BuiltIn().get_variable_value("${SUITE_SOURCE}")
+
+        return self._browser_lib    @property
     def library_comp(self) -> LibraryComponent:
         return LibraryComponent(self.b)
 
